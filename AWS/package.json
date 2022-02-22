@@ -1,0 +1,13 @@
+{
+  "name": "ohlc-guardar-datos-gs",
+  "version": "1.0.0",
+  "description": "Función que toma de la base de datos el ohlc y los pasa a Google Spreadsheet",
+  "main": "index.js",
+  "author": "Manuel Pereira",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "mysql2": "^2.3.3",
+    "googleapis": "^95.0.0"
+  }
+}
