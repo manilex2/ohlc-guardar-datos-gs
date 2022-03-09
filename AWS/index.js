@@ -6,8 +6,6 @@ const auth = new google.auth.GoogleAuth({
     keyFile: 'credentials.json',
     scopes: 'https://www.googleapis.com/auth/spreadsheets'
 });
-const spreadsheetId = process.env.SPREADSHEET_ID;
-
 
 exports.handler = async function (event) {
     const promise = new Promise(async function() {
@@ -26,23 +24,28 @@ exports.handler = async function (event) {
         await finalizarEjecucion();
         async function obtenerOHLC(tabla, hoja){
             try {
+                const spreadsheetId1 = process.env.SPREADSHEET_ID_CP1;
+                const spreadsheetId2 = process.env.SPREADSHEET_ID_CP2;
+                const spreadsheetId3 = process.env.SPREADSHEET_ID_CP3;
                 var sql = `SELECT name,
                 fecha,
                 open, 
                 high,
                 low,
                 close FROM ${tabla}`;
-                conexion.query(sql, function (err, resultado) {
+                conexion.query(sql, async function (err, resultado) {
                     if (err) throw err;
                     JSON.stringify(resultado);
-                    trasladarOHLC(resultado, hoja);
+                    trasladarOHLC(resultado, hoja, spreadsheetId1);
+                    await trasladarOHLC(resultado, hoja, spreadsheetId2);
+                    await trasladarOHLC(resultado, hoja, spreadsheetId3);
                 });
             } catch (error) {
                 console.error(error);
             }
         };
         
-        async function trasladarOHLC(resultado, hoja){
+        async function trasladarOHLC(resultado, hoja, spreadsheetId){
             try {
                 await googleSheet.spreadsheets.values.clear({
                     auth,
