@@ -18,7 +18,6 @@ exports.handler = async function (event) {
         });
         const client = await auth.getClient();
         const googleSheet = google.sheets({ version: 'v4', auth: client });
-        await obtenerOHLC(process.env.TABLE_OHLC_MIN, process.env.ID_HOJA_RANGO1);
         await obtenerOHLC(process.env.TABLE_OHLC_HORA, process.env.ID_HOJA_RANGO2);
         await obtenerOHLC(process.env.TABLE_OHLC_DIA, process.env.ID_HOJA_RANGO3);
         await finalizarEjecucion();
@@ -32,7 +31,7 @@ exports.handler = async function (event) {
                 open, 
                 high,
                 low,
-                close FROM ${tabla}`;
+                close FROM ${tabla} ORDER BY name, fecha DESC`;
                 conexion.query(sql, async function (err, resultado) {
                     if (err) throw err;
                     JSON.stringify(resultado);
@@ -47,28 +46,28 @@ exports.handler = async function (event) {
         
         async function trasladarOHLC(resultado, hoja, spreadsheetId){
             try {
-                await googleSheet.spreadsheets.values.clear({
-                    auth,
-                    spreadsheetId,
-                    range: `${hoja}`
-                });
                 let fecha = new Date(resultado[0].fecha);
                 let mes = fecha.getMonth() + 1;
                 fecha = fecha.getFullYear() + '-' + mes + '-' + fecha.getDate();
+                let name = resultado[0].name;
+                let open = resultado[0].open;
+                let high = resultado[0].high;
+                let low = resultado[0].low;
+                let close = resultado[0].close;
                 let datos = [];
                 datos.push([
-                    resultado[0].name,
+                    name,
                     fecha,
-                    resultado[0].open,
-                    resultado[0].high,
-                    resultado[0].low,
-                    resultado[0].close
-                ])
+                    open,
+                    high,
+                    low,
+                    close
+                ]);
                 for (let i = 0; i < resultado.length; i++) {
                     let fechaArray = new Date(resultado[i].fecha);
-                    let mesArray = fechaArray.getMonth() + 1;;
+                    let mesArray = fechaArray.getMonth() + 1;
                     fechaArray = fechaArray.getFullYear() + '-' + mesArray + '-' + fechaArray.getDate();
-                    if (fecha != fechaArray) {
+                    if ((name == resultado[i].name && fecha != fechaArray) && (open != resultado[i].open || high != resultado[i].high || low != resultado[i].low || close != resultado[i].close)) {
                         datos.push([
                             resultado[i].name,
                             fechaArray,
@@ -77,9 +76,35 @@ exports.handler = async function (event) {
                             resultado[i].low,
                             resultado[i].close
                         ]);
+                        name = resultado[i].name;
                         fecha = fechaArray;
+                        open = resultado[i].open;
+                        high = resultado[i].high;
+                        low = resultado[i].low;
+                        close = resultado[i].close;
+                    }
+                    if ((name != resultado[i].name && fecha != fechaArray) && (open != resultado[i].open || high != resultado[i].high || low != resultado[i].low || close != resultado[i].close)) {
+                        datos.push([
+                            resultado[i].name,
+                            fechaArray,
+                            resultado[i].open,
+                            resultado[i].high,
+                            resultado[i].low,
+                            resultado[i].close
+                        ]);
+                        name = resultado[i].name;
+                        fecha = fechaArray;
+                        open = resultado[i].open;
+                        high = resultado[i].high;
+                        low = resultado[i].low;
+                        close = resultado[i].close;
                     }
                 }
+                await googleSheet.spreadsheets.values.clear({
+                    auth,
+                    spreadsheetId,
+                    range: `${hoja}`
+                });
                 await googleSheet.spreadsheets.values.append({
                     auth,
                     spreadsheetId,
