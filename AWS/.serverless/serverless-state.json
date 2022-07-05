@@ -1,0 +1,779 @@
+{
+  "service": {
+    "service": "coins-ohlc-guardar-datos-gs",
+    "serviceObject": {
+      "name": "coins-ohlc-guardar-datos-gs"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs16.x",
+      "region": "us-east-2",
+      "stage": "prod",
+      "environment": {
+        "DB_HOST": "seguimiento-oportunidades.cbu0yo4ytkop.us-east-2.rds.amazonaws.com",
+        "DB_USER": "root",
+        "DB_PASSWORD": "Invrtir*2021",
+        "DB_PORT": "3306",
+        "DB_DATABASE": "invrtircriptos"
+      },
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "GuardarOHLC30minutosGSLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/guardarOHLC30minutosGS"
+            }
+          },
+          "GuardarOHLC4horasGSLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/guardarOHLC4horasGS"
+            }
+          },
+          "GuardarOHLC4diasGSLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/guardarOHLC4diasGS"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "coins-ohlc-guardar-datos-gs",
+                        "prod",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC30minutosGS:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC4horasGS:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC4diasGS:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC30minutosGS:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC4horasGS:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarOHLC4diasGS:*:*"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "coins-ohlc-guardar-datos-gs",
+                    "prod",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "GuardarOHLC30minutosGSLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/coins-ohlc-guardar-datos-gs/prod/1656984571893-2022-07-05T01:29:31.893Z/coins-ohlc-guardar-datos-gs.zip"
+              },
+              "Handler": "guardarOHLC30min.handler",
+              "Runtime": "nodejs16.x",
+              "FunctionName": "guardarOHLC30minutosGS",
+              "MemorySize": 256,
+              "Timeout": 180,
+              "Description": "LCF9 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+              "Environment": {
+                "Variables": {
+                  "DB_HOST": "seguimiento-oportunidades.cbu0yo4ytkop.us-east-2.rds.amazonaws.com",
+                  "DB_USER": "root",
+                  "DB_PASSWORD": "Invrtir*2021",
+                  "DB_PORT": "3306",
+                  "DB_DATABASE": "invrtircriptos",
+                  "TABLE_OHLC": "ohlc30minutos",
+                  "ID_HOJA_RANGO": "OHLC-30min!A2:F",
+                  "SPREADSHEET_ID_CP1": "1W8Tvmc5Db5bbj5ndhWRgJqFPX5RGdQQQNsDIGsiWMEU",
+                  "SPREADSHEET_ID_CP2": "1RxT4XmCrMaxkDacuU1wKWZczhEkOaONPkpRa2jUDIIc"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GuardarOHLC30minutosGSLogGroup"
+            ]
+          },
+          "GuardarOHLC4horasGSLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/coins-ohlc-guardar-datos-gs/prod/1656984571893-2022-07-05T01:29:31.893Z/coins-ohlc-guardar-datos-gs.zip"
+              },
+              "Handler": "index.handler",
+              "Runtime": "nodejs16.x",
+              "FunctionName": "guardarOHLC4horasGS",
+              "MemorySize": 256,
+              "Timeout": 180,
+              "Description": "LCF21 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+              "Environment": {
+                "Variables": {
+                  "DB_HOST": "seguimiento-oportunidades.cbu0yo4ytkop.us-east-2.rds.amazonaws.com",
+                  "DB_USER": "root",
+                  "DB_PASSWORD": "Invrtir*2021",
+                  "DB_PORT": "3306",
+                  "DB_DATABASE": "invrtircriptos",
+                  "TABLE_OHLC": "ohlc4horas",
+                  "ID_HOJA_RANGO": "OHLC-4horas!A2:F",
+                  "SPREADSHEET_ID_CP1": "1R056Q1p1emTe8jAJgNgYxkEJ_HNOSW3ALQiVNs7zPhk",
+                  "SPREADSHEET_ID_CP2": "1EinheILk6yzfCmOBJg6HxYc6yePgsPok1CCoIxPm3-E",
+                  "SPREADSHEET_ID_CP3": "18Nva_FO9QZfggj6NUd9LE9tuCPMUkaO33GRRbw2sHh4"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GuardarOHLC4horasGSLogGroup"
+            ]
+          },
+          "GuardarOHLC4diasGSLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/coins-ohlc-guardar-datos-gs/prod/1656984571893-2022-07-05T01:29:31.893Z/coins-ohlc-guardar-datos-gs.zip"
+              },
+              "Handler": "index.handler",
+              "Runtime": "nodejs16.x",
+              "FunctionName": "guardarOHLC4diasGS",
+              "MemorySize": 256,
+              "Timeout": 180,
+              "Description": "LCF22 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+              "Environment": {
+                "Variables": {
+                  "DB_HOST": "seguimiento-oportunidades.cbu0yo4ytkop.us-east-2.rds.amazonaws.com",
+                  "DB_USER": "root",
+                  "DB_PASSWORD": "Invrtir*2021",
+                  "DB_PORT": "3306",
+                  "DB_DATABASE": "invrtircriptos",
+                  "TABLE_OHLC": "ohlc4dias",
+                  "ID_HOJA_RANGO": "OHLC-4dias!A2:F",
+                  "SPREADSHEET_ID_CP1": "1R056Q1p1emTe8jAJgNgYxkEJ_HNOSW3ALQiVNs7zPhk",
+                  "SPREADSHEET_ID_CP2": "1EinheILk6yzfCmOBJg6HxYc6yePgsPok1CCoIxPm3-E",
+                  "SPREADSHEET_ID_CP3": "18Nva_FO9QZfggj6NUd9LE9tuCPMUkaO33GRRbw2sHh4"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GuardarOHLC4diasGSLogGroup"
+            ]
+          },
+          "GuardarOHLC30minutosGSLambdaVersion2MzTROXO4OUivDU156n8XKLoa14tR2OtrzmMb4vgg": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC30minutosGSLambdaFunction"
+              },
+              "CodeSha256": "0ymi0t/4FmnA8Pz1KMlu5oIO/p2QbpD+0AC+te32i4Q=",
+              "Description": "LCF9 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet."
+            }
+          },
+          "GuardarOHLC30minutosGSLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC30minutosGSLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GuardarOHLC4horasGSLambdaVersionb0KcGhhXoVMTODXsjfVV4KUfpYdpbqZeg5XPnOXSRA": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC4horasGSLambdaFunction"
+              },
+              "CodeSha256": "0ymi0t/4FmnA8Pz1KMlu5oIO/p2QbpD+0AC+te32i4Q=",
+              "Description": "LCF21 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet."
+            }
+          },
+          "GuardarOHLC4horasGSLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC4horasGSLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GuardarOHLC4diasGSLambdaVersionjeHjdeiQDTsTSFxeh65O9yZbJg4R5STm9OhJpYpM0Y": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC4diasGSLambdaFunction"
+              },
+              "CodeSha256": "0ymi0t/4FmnA8Pz1KMlu5oIO/p2QbpD+0AC+te32i4Q=",
+              "Description": "LCF22 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet."
+            }
+          },
+          "GuardarOHLC4diasGSLambdaEvConf": {
+            "Type": "AWS::Lambda::EventInvokeConfig",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GuardarOHLC4diasGSLambdaFunction"
+              },
+              "DestinationConfig": {},
+              "Qualifier": "$LATEST",
+              "MaximumRetryAttempts": 0
+            }
+          },
+          "GuardarOHLC30minutosGSrule1EventBridgeRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "Name": "guardarOHLC30minutosGS-rule-1",
+              "ScheduleExpression": "cron(05 11,13,15,17,19,21,23,01,03 ? * * *)",
+              "State": "ENABLED",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "GuardarOHLC30minutosGSLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "guardarOHLC30minutosGS-rule-1-target"
+                }
+              ]
+            }
+          },
+          "GuardarOHLC30minutosGSEventBridgeLambdaPermission1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "Action": "lambda:InvokeFunction",
+              "FunctionName": {
+                "Ref": "GuardarOHLC30minutosGSLambdaFunction"
+              },
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  ":",
+                  [
+                    "arn",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    "events",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    {
+                      "Fn::Join": [
+                        "/",
+                        [
+                          "rule",
+                          "guardarOHLC30minutosGS-rule-1"
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "GuardarOHLC4horasGSrule1EventBridgeRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "Name": "guardarOHLC4horasGS-rule-1",
+              "ScheduleExpression": "cron(20 8 ? * * *)",
+              "State": "ENABLED",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "GuardarOHLC4horasGSLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "guardarOHLC4horasGS-rule-1-target"
+                }
+              ]
+            }
+          },
+          "GuardarOHLC4horasGSEventBridgeLambdaPermission1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "Action": "lambda:InvokeFunction",
+              "FunctionName": {
+                "Ref": "GuardarOHLC4horasGSLambdaFunction"
+              },
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  ":",
+                  [
+                    "arn",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    "events",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    {
+                      "Fn::Join": [
+                        "/",
+                        [
+                          "rule",
+                          "guardarOHLC4horasGS-rule-1"
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "GuardarOHLC4diasGSrule1EventBridgeRule": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "Name": "guardarOHLC4diasGS-rule-1",
+              "ScheduleExpression": "cron(20 8 ? * * *)",
+              "State": "ENABLED",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "GuardarOHLC4diasGSLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "guardarOHLC4diasGS-rule-1-target"
+                }
+              ]
+            }
+          },
+          "GuardarOHLC4diasGSEventBridgeLambdaPermission1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "Action": "lambda:InvokeFunction",
+              "FunctionName": {
+                "Ref": "GuardarOHLC4diasGSLambdaFunction"
+              },
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  ":",
+                  [
+                    "arn",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    "events",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    {
+                      "Fn::Join": [
+                        "/",
+                        [
+                          "rule",
+                          "guardarOHLC4diasGS-rule-1"
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            },
+            "Export": {
+              "Name": "sls-coins-ohlc-guardar-datos-gs-prod-ServerlessDeploymentBucketName"
+            }
+          },
+          "GuardarOHLC30minutosGSLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "GuardarOHLC30minutosGSLambdaVersion2MzTROXO4OUivDU156n8XKLoa14tR2OtrzmMb4vgg"
+            },
+            "Export": {
+              "Name": "sls-coins-ohlc-guardar-datos-gs-prod-GuardarOHLC30minutosGSLambdaFunctionQualifiedArn"
+            }
+          },
+          "GuardarOHLC4horasGSLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "GuardarOHLC4horasGSLambdaVersionb0KcGhhXoVMTODXsjfVV4KUfpYdpbqZeg5XPnOXSRA"
+            },
+            "Export": {
+              "Name": "sls-coins-ohlc-guardar-datos-gs-prod-GuardarOHLC4horasGSLambdaFunctionQualifiedArn"
+            }
+          },
+          "GuardarOHLC4diasGSLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "GuardarOHLC4diasGSLambdaVersionjeHjdeiQDTsTSFxeh65O9yZbJg4R5STm9OhJpYpM0Y"
+            },
+            "Export": {
+              "Name": "sls-coins-ohlc-guardar-datos-gs-prod-GuardarOHLC4diasGSLambdaFunctionQualifiedArn"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "pluginsData": {},
+    "functions": {
+      "guardarOHLC30minutosGS": {
+        "handler": "guardarOHLC30min.handler",
+        "memorySize": 256,
+        "name": "guardarOHLC30minutosGS",
+        "description": "LCF9 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+        "timeout": 180,
+        "maximumRetryAttempts": 0,
+        "environment": {
+          "TABLE_OHLC": "ohlc30minutos",
+          "ID_HOJA_RANGO": "OHLC-30min!A2:F",
+          "SPREADSHEET_ID_CP1": "1W8Tvmc5Db5bbj5ndhWRgJqFPX5RGdQQQNsDIGsiWMEU",
+          "SPREADSHEET_ID_CP2": "1RxT4XmCrMaxkDacuU1wKWZczhEkOaONPkpRa2jUDIIc"
+        },
+        "events": [
+          {
+            "eventBridge": {
+              "schedule": "cron(05 11,13,15,17,19,21,23,01,03 ? * * *)"
+            }
+          }
+        ],
+        "package": {},
+        "memory": 256,
+        "runtime": "nodejs16.x",
+        "vpc": {},
+        "versionLogicalId": "GuardarOHLC30minutosGSLambdaVersion2MzTROXO4OUivDU156n8XKLoa14tR2OtrzmMb4vgg"
+      },
+      "guardarOHLC4horasGS": {
+        "handler": "index.handler",
+        "memorySize": 256,
+        "name": "guardarOHLC4horasGS",
+        "description": "LCF21 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+        "timeout": 180,
+        "maximumRetryAttempts": 0,
+        "environment": {
+          "TABLE_OHLC": "ohlc4horas",
+          "ID_HOJA_RANGO": "OHLC-4horas!A2:F",
+          "SPREADSHEET_ID_CP1": "1R056Q1p1emTe8jAJgNgYxkEJ_HNOSW3ALQiVNs7zPhk",
+          "SPREADSHEET_ID_CP2": "1EinheILk6yzfCmOBJg6HxYc6yePgsPok1CCoIxPm3-E",
+          "SPREADSHEET_ID_CP3": "18Nva_FO9QZfggj6NUd9LE9tuCPMUkaO33GRRbw2sHh4"
+        },
+        "events": [
+          {
+            "eventBridge": {
+              "schedule": "cron(20 8 ? * * *)"
+            }
+          }
+        ],
+        "package": {},
+        "memory": 256,
+        "runtime": "nodejs16.x",
+        "vpc": {},
+        "versionLogicalId": "GuardarOHLC4horasGSLambdaVersionb0KcGhhXoVMTODXsjfVV4KUfpYdpbqZeg5XPnOXSRA"
+      },
+      "guardarOHLC4diasGS": {
+        "handler": "index.handler",
+        "memorySize": 256,
+        "name": "guardarOHLC4diasGS",
+        "description": "LCF22 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.",
+        "timeout": 180,
+        "maximumRetryAttempts": 0,
+        "environment": {
+          "TABLE_OHLC": "ohlc4dias",
+          "ID_HOJA_RANGO": "OHLC-4dias!A2:F",
+          "SPREADSHEET_ID_CP1": "1R056Q1p1emTe8jAJgNgYxkEJ_HNOSW3ALQiVNs7zPhk",
+          "SPREADSHEET_ID_CP2": "1EinheILk6yzfCmOBJg6HxYc6yePgsPok1CCoIxPm3-E",
+          "SPREADSHEET_ID_CP3": "18Nva_FO9QZfggj6NUd9LE9tuCPMUkaO33GRRbw2sHh4"
+        },
+        "events": [
+          {
+            "eventBridge": {
+              "schedule": "cron(20 8 ? * * *)"
+            }
+          }
+        ],
+        "package": {},
+        "memory": 256,
+        "runtime": "nodejs16.x",
+        "vpc": {},
+        "versionLogicalId": "GuardarOHLC4diasGSLambdaVersionjeHjdeiQDTsTSFxeh65O9yZbJg4R5STm9OhJpYpM0Y"
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "initialServerlessConfig": {
+      "service": "coins-ohlc-guardar-datos-gs",
+      "useDotenv": true,
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      }
+    },
+    "layers": {},
+    "isDashboardMonitoringPreconfigured": false,
+    "artifact": "C:\\Users\\Usuario\\Desktop\\Proyectos\\Invrtir\\ohlc-guardar-datos-gs\\AWS\\.serverless\\coins-ohlc-guardar-datos-gs.zip"
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/coins-ohlc-guardar-datos-gs/prod/1656984571893-2022-07-05T01:29:31.893Z",
+    "artifact": "coins-ohlc-guardar-datos-gs.zip"
+  }
+}

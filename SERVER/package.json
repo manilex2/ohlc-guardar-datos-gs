@@ -4,7 +4,7 @@
   "description": "Función que toma de la base de datos el ohlc y los pasa a Google Spreadsheet",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js"
+    "dev": "nodemon guardarOHLC30min.js"
   },
   "author": "Manuel Pereira",
   "license": "ISC",

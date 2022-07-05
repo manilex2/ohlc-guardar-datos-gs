@@ -29,19 +29,25 @@ app.get('/', async (req, res) => {
         try {
             const spreadsheetId1 = process.env.SPREADSHEET_ID_CP1;
             const spreadsheetId2 = process.env.SPREADSHEET_ID_CP2;
-            const spreadsheetId3 = process.env.SPREADSHEET_ID_CP3;
+            var fechaActual = new Date();
+            var fechaFiltro = new Date();
+            var fechaFiltro = fechaFiltro.setDate(fechaActual.getDate()-4);
+            fechaFiltro = new Date(fechaFiltro);
+            fechaActual = `${fechaActual.getFullYear()}-${fechaActual.getMonth()+1}-${fechaActual.getDate()}T${fechaActual.getHours()}:${fechaActual.getMinutes()}:${fechaActual.getSeconds()}.000Z`;
+            fechaFiltro = `${fechaFiltro.getFullYear()}-${fechaFiltro.getMonth()+1}-${fechaFiltro.getDate()}T${fechaFiltro.getHours()}:${fechaFiltro.getMinutes()}:${fechaFiltro.getSeconds()}.000Z`;
+
             var sql = `SELECT name,
             fecha,
             open, 
             high,
             low,
-            close FROM ${tabla} ORDER BY name, fecha DESC`;
+            close FROM ${tabla} WHERE fecha BETWEEN "${fechaFiltro}" AND "${fechaActual}" ORDER BY name, fecha DESC`;
+            console.log(fechaActual, fechaFiltro)
             conexion.query(sql, async function (err, resultado) {
                 if (err) throw err;
                 JSON.stringify(resultado);
                 trasladarOHLC(resultado, hoja, spreadsheetId1);
                 await trasladarOHLC(resultado, hoja, spreadsheetId2);
-                await trasladarOHLC(resultado, hoja, spreadsheetId3);
             });
         } catch (error) {
             console.error(error);
@@ -50,59 +56,24 @@ app.get('/', async (req, res) => {
     
     async function trasladarOHLC(resultado, hoja, spreadsheetId){
         try {
-            let fecha = new Date(resultado[0].fecha);
-            let mes = fecha.getMonth() + 1;
-            fecha = fecha.getFullYear() + '-' + mes + '-' + fecha.getDate();
-            let name = resultado[0].name;
-            let open = resultado[0].open;
-            let high = resultado[0].high;
-            let low = resultado[0].low;
-            let close = resultado[0].close;
-            let datos = [];
-            datos.push([
-                name,
-                fecha,
-                open,
-                high,
-                low,
-                close
-            ]);
+            var datos = [];
             for (let i = 0; i < resultado.length; i++) {
-                let fechaArray = new Date(resultado[i].fecha);
-                let mesArray = fechaArray.getMonth() + 1;
-                fechaArray = fechaArray.getFullYear() + '-' + mesArray + '-' + fechaArray.getDate();
-                if ((name == resultado[i].name && fecha != fechaArray) && (open != resultado[i].open || high != resultado[i].high || low != resultado[i].low || close != resultado[i].close)) {
-                    datos.push([
-                        resultado[i].name,
-                        fechaArray,
-                        resultado[i].open,
-                        resultado[i].high,
-                        resultado[i].low,
-                        resultado[i].close
-                    ]);
-                    name = resultado[i].name;
-                    fecha = fechaArray;
-                    open = resultado[i].open;
-                    high = resultado[i].high;
-                    low = resultado[i].low;
-                    close = resultado[i].close;
-                }
-                if ((name != resultado[i].name && fecha != fechaArray) && (open != resultado[i].open || high != resultado[i].high || low != resultado[i].low || close != resultado[i].close)) {
-                    datos.push([
-                        resultado[i].name,
-                        fechaArray,
-                        resultado[i].open,
-                        resultado[i].high,
-                        resultado[i].low,
-                        resultado[i].close
-                    ]);
-                    name = resultado[i].name;
-                    fecha = fechaArray;
-                    open = resultado[i].open;
-                    high = resultado[i].high;
-                    low = resultado[i].low;
-                    close = resultado[i].close;
-                }
+                let fecha = new Date(resultado[i].fecha);
+                let mes = fecha.getMonth() + 1;
+                fecha = `${fecha.getFullYear()}-${mes}-${fecha.getDate()} ${fecha.getHours()}:${fecha.getMinutes()}:${fecha.getSeconds()}`;
+                let name = resultado[i].name;
+                let open = resultado[i].open;
+                let high = resultado[i].high;
+                let low = resultado[i].low;
+                let close = resultado[i].close;
+                datos.push([
+                    name,
+                    fecha,
+                    open,
+                    high,
+                    low,
+                    close
+                ]);
             }
             await googleSheet.spreadsheets.values.clear({
                 auth,
