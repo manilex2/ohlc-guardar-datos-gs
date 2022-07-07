@@ -35,7 +35,7 @@ functions:
     handler: index.handler
     memorySize: 256
     name: guardarOHLC4horasGS
-    description: LCF21 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.
+    description: LCF10 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.
     timeout: 180
     maximumRetryAttempts: 0
     environment:
@@ -51,7 +51,7 @@ functions:
     handler: index.handler
     memorySize: 256
     name: guardarOHLC4diasGS
-    description: LCF22 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.
+    description: LCF11 - Función que obtiene el OHLC de la base de datos y lo guarda en Google SpreadSheet.
     timeout: 180
     maximumRetryAttempts: 0
     environment:
