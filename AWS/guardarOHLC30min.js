@@ -18,12 +18,12 @@ exports.handler = async function (event) {
         });
         const client = await auth.getClient();
         const googleSheet = google.sheets({ version: 'v4', auth: client });
-        await obtenerOHLC(process.env.TABLE_OHLC, process.env.ID_HOJA_RANGO);
+        await obtenerOHLC(process.env.TABLE_OHLC_MIN, process.env.ID_HOJA_RANGO1);
         await finalizarEjecucion();
         async function obtenerOHLC(tabla, hoja){
             try {
-                const spreadsheetId1 = process.env.SPREADSHEET_ID_CP1;
-                const spreadsheetId2 = process.env.SPREADSHEET_ID_CP2;
+                const spreadsheetId1 = process.env.SPREADSHEET_ID_CP1_MIN;
+                const spreadsheetId2 = process.env.SPREADSHEET_ID_CP2_MIN;
                 var fechaActual = new Date();
                 var fechaFiltro = new Date();
                 var fechaFiltro = fechaFiltro.setDate(fechaActual.getDate()-4);
