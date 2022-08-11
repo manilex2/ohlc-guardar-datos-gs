@@ -24,10 +24,10 @@ functions:
     timeout: 180
     maximumRetryAttempts: 0
     environment:
-      TABLE_OHLC_MIN: ${env:TABLE_OHLC_MIN}
-      ID_HOJA_RANGO1: ${env:ID_HOJA_RANGO1}
-      SPREADSHEET_ID_CP1_MIN: ${env:SPREADSHEET_ID_CP1_MIN}
-      SPREADSHEET_ID_CP2_MIN: ${env:SPREADSHEET_ID_CP2_MIN}
+      TABLE_OHLC: ${env:TABLE_OHLC_MIN}
+      ID_HOJA_RANGO: ${env:ID_HOJA_RANGO1}
+      SPREADSHEET_ID_CP1: ${env:SPREADSHEET_ID_CP1_MIN}
+      SPREADSHEET_ID_CP2: ${env:SPREADSHEET_ID_CP2_MIN}
     events:
       - eventBridge:
           schedule: cron(15 11,13,15,17,19,21,23,01,03 ? * * *)
@@ -39,8 +39,8 @@ functions:
     timeout: 180
     maximumRetryAttempts: 0
     environment:
-      TABLE_OHLC_HORA: ${env:TABLE_OHLC_HORA}
-      ID_HOJA_RANGO2: ${env:ID_HOJA_RANGO2}
+      TABLE_OHLC: ${env:TABLE_OHLC_HORA}
+      ID_HOJA_RANGO: ${env:ID_HOJA_RANGO2}
       SPREADSHEET_ID_CP1: ${env:SPREADSHEET_ID_CP1}
       SPREADSHEET_ID_CP2: ${env:SPREADSHEET_ID_CP2}
       SPREADSHEET_ID_CP3: ${env:SPREADSHEET_ID_CP3}
@@ -55,8 +55,8 @@ functions:
     timeout: 180
     maximumRetryAttempts: 0
     environment:
-      TABLE_OHLC_DIA: ${env:TABLE_OHLC_DIA}
-      ID_HOJA_RANGO3: ${env:ID_HOJA_RANGO3}
+      TABLE_OHLC: ${env:TABLE_OHLC_DIA}
+      ID_HOJA_RANGO: ${env:ID_HOJA_RANGO3}
       SPREADSHEET_ID_CP1: ${env:SPREADSHEET_ID_CP1}
       SPREADSHEET_ID_CP2: ${env:SPREADSHEET_ID_CP2}
       SPREADSHEET_ID_CP3: ${env:SPREADSHEET_ID_CP3}

@@ -18,8 +18,7 @@ exports.handler = async function (event) {
         });
         const client = await auth.getClient();
         const googleSheet = google.sheets({ version: 'v4', auth: client });
-        await obtenerOHLC(process.env.TABLE_OHLC_HORA, process.env.ID_HOJA_RANGO2);
-        await obtenerOHLC(process.env.TABLE_OHLC_DIA, process.env.ID_HOJA_RANGO3);
+        await obtenerOHLC(process.env.TABLE_OHLC, process.env.ID_HOJA_RANGO);
         await finalizarEjecucion();
         async function obtenerOHLC(tabla, hoja){
             try {
@@ -122,6 +121,7 @@ exports.handler = async function (event) {
         };
         async function finalizarEjecucion() {
             conexion.end();
+            return "OK";
         }
     });
     return promise;
